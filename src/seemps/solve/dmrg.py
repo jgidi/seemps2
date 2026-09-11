@@ -5,10 +5,10 @@ import numpy as np
 import scipy.sparse.linalg
 from ..tools import make_logger
 from ..typing import Tensor4
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, scprod
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..state.simplification import AntilinearForm
 from ..cython import _contract_last_and_first
-from ..operators import MPO
+from ..operators import MPO, axpy_norm
 from ..operators.quadratic import QuadraticForm
 
 
@@ -25,15 +25,9 @@ _SOLVERS: dict[str, SolverFn] = {
 
 def _relative_change(a: MPS, b: MPS) -> float:
     a_norm_sq = a.norm_squared()
-    b_norm_sq = b.norm_squared()
     if a_norm_sq == 0:
-        if b_norm_sq == 0:
-            return 0.0
-        else:
-            return np.inf
-
-    d_sq = a_norm_sq - 2.0 * scprod(a, b).real + b_norm_sq
-    return sqrt(max(d_sq, 0.0) / a_norm_sq)
+        return 0.0 if b.norm_squared() == 0 else np.inf
+    return (a - b).norm() / sqrt(a_norm_sq)
 
 
 def _solve_local(
@@ -90,7 +84,7 @@ def dmrg_solve(
     strategy: Strategy = DEFAULT_STRATEGY,
     method: str = "bicgstab",
     compute_residuals: bool = True,
-) -> tuple[MPS, float | None]:
+) -> tuple[CanonicalMPS, float | None]:
     r"""Solve :math:`A x = b` for an MPO `A` and an MPS `b` using two-site DMRG.
 
     Parameters
@@ -152,7 +146,7 @@ def dmrg_solve(
     residual: float | None = np.inf
     change_tol = max(rtol, atol / b_norm) if b_norm > 0 else rtol
     if compute_residuals:
-        residual = (A @ QF.state - b).norm()
+        residual = axpy_norm(A, QF.state, b, -1.0)
         logger(f"initial residual={residual}")
         if residual <= tol:
             logger(f"Converged below tolerance {tol}")
@@ -167,7 +161,7 @@ def dmrg_solve(
         direction = -direction
 
         if compute_residuals:
-            residual = (A @ QF.state - b).norm()
+            residual = axpy_norm(A, QF.state, b, -1.0)
             logger(f"sweep={sweep}, residual={residual}")
             if residual <= tol:
                 logger(f"Converged below tolerance {tol}")
