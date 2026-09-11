@@ -11,6 +11,7 @@ from .mpo import MPO
 def axpy_norm(A: MPO, x: MPS, y: MPS, alpha: Weight = 1.0) -> float:
     """Norm-2 of `A @ x + alpha * y`, without building or simplifying `A @ x`.
 
+    Parameters
     ----------
     A : MPO
         Operator applied to `x`.
