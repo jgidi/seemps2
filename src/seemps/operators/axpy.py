@@ -47,6 +47,7 @@ def axpy_norm(A: MPO, x: MPS, y: MPS, alpha: Weight = 1.0) -> float:
         R = R[: min(R.shape)]
         k = Dr * xr
         RA, RY = R[:, :k], R[:, k:]
+    raise ValueError("Cannot compute the norm of an empty MPS")
 
 
 __all__ = ["axpy_norm"]
