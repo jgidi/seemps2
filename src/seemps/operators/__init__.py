@@ -2,6 +2,7 @@ from .mpo import MPO, MPOList, MPOProd
 from .mposum import MPOSum
 from . import projectors
 from .simplify_mpo import mpo_as_mps, mps_as_mpo, simplify_mpo, CANONICALIZE_MPO
+from .axpy import axpy_norm
 
 __all__ = [
     "MPO",
@@ -14,4 +15,5 @@ __all__ = [
     "mpo_as_mps",
     "simplify_mpo",
     "CANONICALIZE_MPO",
+    "axpy_norm",
 ]
